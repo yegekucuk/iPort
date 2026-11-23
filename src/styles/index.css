@@ -1,0 +1,103 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--window-bg-color);
+  color: var(--window-fg-color);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+.font-mono-tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.selectable-text {
+  user-select: text;
+}
+
+/* libadwaita button & card primitives */
+.adw-flat-btn {
+  border-radius: 6px;
+  transition: background-color 110ms ease, color 110ms ease, border-color 110ms ease;
+}
+
+.adw-flat-btn:hover:not(:disabled) {
+  background-color: var(--hover-bg-color);
+}
+
+.adw-flat-btn:active:not(:disabled) {
+  background-color: var(--active-bg-color);
+}
+
+.adw-boxed-list {
+  background-color: var(--card-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.adw-destructive-btn {
+  background-color: var(--destructive-bg-color);
+  color: var(--destructive-fg-color);
+  border-radius: 6px;
+  transition: filter 110ms ease;
+}
+
+.adw-destructive-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+/* GNOME keyboard focus ring */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent-bg-color);
+  outline-offset: -1px;
+}
+
+/* Subtle GTK-style scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

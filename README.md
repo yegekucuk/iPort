@@ -2,7 +2,7 @@
 
 > A lightweight, cross-platform desktop command center to inspect, organize, and manage every local port, dev server, Docker container, background service, tunnel, and third-party application running on your machine.
 
-[![Status](https://img.shields.io/badge/status-planning-blue)](#roadmap)
+[![Status](https://img.shields.io/badge/status-Phase%201%20MVP-brightgreen)](#roadmap)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](#design--architecture-decisions)
 [![Stack](https://img.shields.io/badge/stack-Tauri%20v2%20%2B%20Rust%20%2B%20React%20TS-orange)](#tech-stack)
 
@@ -31,7 +31,7 @@ All foundational product and technical decisions agreed upon for **iPort**:
 | **Noise Filtering** | **Hide core OS daemons by default; show ALL third-party installed apps & dev services** (with 1-click `System` toggle) | Eliminates OS noise while guaranteeing visibility into every third-party program occupying a port. |
 | **Refresh Strategy** | **Fixed fast polling (2-second interval)** for full snapshots (configurable in settings) | Simple, deterministic architecture; keeps the tray badge, table, and crash/conflict alerts continuously fresh. |
 | **UI Language** | **English only** | Clean, unified global developer tool standard. |
-| **Visual Design** | **System-adaptive Dark & Light themes** — minimal Linear / Raycast-inspired developer aesthetic | Tabular monospace port numbers, crisp status indicators, high information density, keyboard-first navigation. |
+| **Visual Design** | **System-adaptive Dark & Light themes** — native GNOME 46 / libadwaita & Ubuntu Yaru aesthetic | Matches desktop `gsettings` theme & accent automatically, with tabular monospace numbers, high information density, and keyboard-first navigation. |
 
 ---
 
@@ -191,19 +191,19 @@ iPort/
 ## Roadmap
 
 ### Phase 0 — Foundation & Project Setup
-- [ ] Initialize Tauri v2 + React + TypeScript + Vite + Tailwind CSS workspace
-- [ ] Configure shared domain data models (`PortEntry`, `SourceType`, `AppCategory`, `ServiceManager`, `ManagedAction`) across Rust and TypeScript
-- [ ] Set up design system tokens (Dark & Light system-adaptive themes, monospace port badges, keyboard focus rings)
-- [ ] Add GitHub Actions CI matrix to validate Rust & frontend builds across macOS, Linux, and Windows
+- [x] Initialize Tauri v2 + React + TypeScript + Vite + Tailwind CSS workspace
+- [x] Configure shared domain data models (`PortEntry`, `SourceType`, `AppCategory`, `ServiceManager`, `ManagedAction`) across Rust and TypeScript
+- [x] Set up design system tokens (Dark & Light system-adaptive themes, monospace port badges, keyboard focus rings)
+- [x] Add GitHub Actions CI matrix to validate Rust & frontend builds across macOS, Linux, and Windows
 
 ### Phase 1 — MVP: Core Port Scanner, 3rd-Party Classification & High-Density Table
-- [ ] Implement cross-platform TCP & UDP listening port collector (port, protocol, bind address, PID, parent PID, command line, CWD, CPU, RAM, uptime)
-- [ ] Implement fixed **2-second polling loop** emitting normalized snapshots to the UI
-- [ ] Build **OS vs. 3rd-Party Classifier** for macOS, Linux, and Windows (hide core OS daemons by default; surface all third-party installed programs)
-- [ ] Build **Smart Framework & Runtime Detector** (Next.js, Vite, React, Node/Bun/Deno, Python/FastAPI/Uvicorn/Django/Flask, Go, Rust, Postgres, Redis, MongoDB, etc.)
-- [ ] Build the **High-Density Dashboard Table** with instant search, multi-column sorting, and quick filter chips (`All`, `Dev`, `Docker`, `Services`, `Tunnels`, `3rd-Party`, `System`)
-- [ ] Implement **Quick Developer Actions**: Open in Browser (`http`/`https`), Copy URL/Port, Reveal Project Folder, Open in IDE (VS Code / Cursor / custom)
-- [ ] Implement basic local process controls: Graceful Stop (`SIGTERM`) and Force Kill (`SIGKILL`)
+- [x] Implement cross-platform TCP & UDP listening port collector (port, protocol, bind address, PID, parent PID, command line, CWD, CPU, RAM, uptime)
+- [x] Implement fixed **2-second polling loop** emitting normalized snapshots to the UI
+- [x] Build **OS vs. 3rd-Party Classifier** for macOS, Linux, and Windows (hide core OS daemons by default; surface all third-party installed programs)
+- [x] Build **Smart Framework & Runtime Detector** (Next.js, Vite, React, Node/Bun/Deno, Python/FastAPI/Uvicorn/Django/Flask, Go, Rust, Postgres, Redis, MongoDB, etc.)
+- [x] Build the **High-Density Dashboard Table** with instant search, multi-column sorting, and quick filter chips (`All`, `Dev`, `Docker`, `Services`, `Tunnels`, `3rd-Party`, `System`)
+- [x] Implement **Quick Developer Actions**: Open in Browser (`http`/`https`), Copy URL/Port, Reveal Project Folder, Open in IDE (VS Code / Cursor / custom)
+- [x] Implement basic local process controls: Graceful Stop (`SIGTERM`) and Force Kill (`SIGKILL`)
 
 ### Phase 2 — Hybrid UX: System Tray Popover, Live Badge & Global Hotkey
 - [ ] Implement System Tray / Menu Bar integration with live **active non-OS port count badge**
@@ -249,4 +249,4 @@ iPort/
 
 ## Status
 
-Currently in the **design & planning phase**. All core architectural decisions and phased milestones are documented above—next step is initializing Phase 0 (Tauri v2 + React/TypeScript scaffold).
+**Phase 0 (Foundation)** and **Phase 1 (MVP)** are implemented and verified. Next up is **Phase 2** (System Tray / Menu Bar popover, live non-OS port count badge, global command-palette hotkey, and launch at login).
