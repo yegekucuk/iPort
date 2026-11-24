@@ -70,19 +70,24 @@ export function buildPortColumns(
     }) as ColumnDef<PortEntry, unknown>,
 
     columnHelper.accessor(
-      (row) => row.framework || row.processName,
+      (row) => row.docker?.containerName || row.framework || row.processName,
       {
         id: "process",
         header: "Process / Stack",
         cell: (info) => {
           const entry = info.row.original;
-          const title = entry.framework
-            ? `${entry.framework}`
-            : entry.processName;
-          const subtitle =
-            entry.projectName ||
-            (entry.cwd ? shortenPath(entry.cwd, 42) : entry.processName);
+          const docker = entry.docker;
+          const title = docker
+            ? docker.containerName
+            : entry.framework
+              ? entry.framework
+              : entry.processName;
+          const subtitle = docker
+            ? docker.image
+            : entry.projectName ||
+              (entry.cwd ? shortenPath(entry.cwd, 42) : entry.processName);
           const showProcessTag =
+            !docker &&
             Boolean(entry.framework) &&
             entry.processName.toLowerCase() !== entry.framework?.toLowerCase();
 
@@ -92,6 +97,16 @@ export function buildPortColumns(
                 <span className="font-medium text-[13px] text-[var(--window-fg-color)] truncate">
                   {title}
                 </span>
+                {docker && docker.containerPort !== entry.port && (
+                  <span className="font-mono-tabular text-[11px] px-1.5 py-0.25 rounded-[4px] bg-[var(--entry-bg-color)] text-[var(--muted-fg-color)] shrink-0">
+                    → :{docker.containerPort}
+                  </span>
+                )}
+                {docker?.composeProject && (
+                  <span className="text-[11px] px-1.5 py-0.25 rounded-[4px] bg-[var(--entry-bg-color)] text-[var(--muted-fg-color)] shrink-0">
+                    {docker.composeProject}
+                  </span>
+                )}
                 {entry.runtime && (
                   <span className="text-[11px] px-1.5 py-0.25 rounded-[4px] bg-[var(--entry-bg-color)] text-[var(--muted-fg-color)] shrink-0">
                     {entry.runtime}

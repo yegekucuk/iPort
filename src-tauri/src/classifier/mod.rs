@@ -27,6 +27,8 @@ pub struct ClassificationInput<'a> {
     pub exe_path: Option<&'a str>,
     pub command_line: &'a str,
     pub port: u16,
+    pub uid: Option<u32>,
+    pub is_docker: bool,
     pub framework: Option<&'a str>,
     pub runtime: Option<&'a str>,
 }
@@ -41,9 +43,13 @@ pub struct ClassificationResult {
 
 const LINUX_CORE_DAEMONS: &[&str] = &[
     "systemd-resolved",
+    "systemd-resolve",
     "systemd-timesyncd",
+    "systemd-timesyn",
     "systemd-networkd",
+    "systemd-network",
     "systemd-journald",
+    "systemd-journal",
     "systemd-udevd",
     "avahi-daemon",
     "cupsd",
@@ -59,6 +65,7 @@ const LINUX_CORE_DAEMONS: &[&str] = &[
     "ntpd",
     "bluetoothd",
     "sshd",
+    "sshd (socket)",
     "rsyslogd",
     "snapd",
     "packagekitd",
@@ -163,6 +170,13 @@ pub fn classify_process(input: &ClassificationInput<'_>, os: TargetOs) -> Classi
         .map(|s| s.trim().to_ascii_lowercase())
         .unwrap_or_default();
     let cmd_lower = input.command_line.trim().to_ascii_lowercase();
+    let argv0_lower = cmd_lower.split_whitespace().next().unwrap_or("");
+    let cmd_bin = argv0_lower.rsplit('/').next().unwrap_or(argv0_lower);
+    let effective_path = if exe_lower.is_empty() {
+        argv0_lower
+    } else {
+        exe_lower.as_str()
+    };
 
     if is_tunnel(&name_lower, &cmd_lower) {
         return ClassificationResult {
@@ -173,7 +187,7 @@ pub fn classify_process(input: &ClassificationInput<'_>, os: TargetOs) -> Classi
         };
     }
 
-    if is_docker_proxy(&name_lower, &exe_lower, &cmd_lower) {
+    if input.is_docker || is_docker_proxy(&name_lower, effective_path, &cmd_lower) {
         return ClassificationResult {
             source_type: SourceType::Docker,
             category: AppCategory::Docker,
@@ -182,7 +196,7 @@ pub fn classify_process(input: &ClassificationInput<'_>, os: TargetOs) -> Classi
         };
     }
 
-    if is_pm2_managed(&name_lower, &exe_lower, &cmd_lower) {
+    if is_pm2_managed(&name_lower, effective_path, &cmd_lower) {
         return ClassificationResult {
             source_type: SourceType::Service,
             category: AppCategory::Service,
@@ -191,13 +205,28 @@ pub fn classify_process(input: &ClassificationInput<'_>, os: TargetOs) -> Classi
         };
     }
 
-    if is_core_os_process(&name_lower, &exe_lower, &cmd_lower, input.port, os)
+    // Unresolved root/system-UID sockets on Linux should be categorized as System rather than 3rd-Party.
+    if os == TargetOs::Linux
+        && (name_lower == "system/root"
+            || (name_lower == "unknown" && input.uid.is_some_and(|u| u < 1000)))
+    {
+        return ClassificationResult {
+            source_type: SourceType::System,
+            category: AppCategory::System,
+            is_core_os: true,
+            service_manager: ServiceManager::None,
+        };
+    }
+
+    if is_core_os_process(&name_lower, cmd_bin, effective_path, &cmd_lower, input.port, os)
         && input.framework.is_none()
         && input.runtime.is_none()
     {
-        let service_manager = if os == TargetOs::Linux && name_lower.starts_with("systemd") {
+        let service_manager = if os == TargetOs::Linux
+            && (name_lower.starts_with("systemd") || name_lower == "sshd (socket)")
+        {
             ServiceManager::Systemd
-        } else if os == TargetOs::MacOS && exe_lower.starts_with("/system/") {
+        } else if os == TargetOs::MacOS && effective_path.starts_with("/system/") {
             ServiceManager::Launchd
         } else if os == TargetOs::Windows && name_lower.starts_with("svchost") {
             ServiceManager::WindowsService
@@ -215,7 +244,9 @@ pub fn classify_process(input: &ClassificationInput<'_>, os: TargetOs) -> Classi
 
     if input.framework.is_some()
         || input.runtime.is_some()
-        || DEV_BINARIES.iter().any(|bin| name_lower == *bin)
+        || DEV_BINARIES
+            .iter()
+            .any(|bin| name_lower == *bin || cmd_bin == *bin)
         || (name_lower.starts_with("python3.") && !name_lower.contains("apport"))
     {
         return ClassificationResult {
@@ -298,6 +329,7 @@ fn is_pm2_managed(name_lower: &str, exe_lower: &str, cmd_lower: &str) -> bool {
 
 fn is_core_os_process(
     name_lower: &str,
+    cmd_bin: &str,
     exe_lower: &str,
     cmd_lower: &str,
     port: u16,
@@ -319,7 +351,10 @@ fn is_core_os_process(
 
     match os {
         TargetOs::Linux => {
-            if LINUX_CORE_DAEMONS.iter().any(|d| name_lower == *d) {
+            if LINUX_CORE_DAEMONS
+                .iter()
+                .any(|d| name_lower == *d || cmd_bin == *d)
+            {
                 return true;
             }
             if name_lower == "dnsmasq"
@@ -337,7 +372,10 @@ fn is_core_os_process(
                 || exe_lower.starts_with("/usr/libexec/")
         }
         TargetOs::MacOS => {
-            if MACOS_CORE_DAEMONS.iter().any(|d| name_lower == *d) {
+            if MACOS_CORE_DAEMONS
+                .iter()
+                .any(|d| name_lower == *d || cmd_bin == *d)
+            {
                 return true;
             }
             if port == 22 && name_lower.contains("sshd") {
@@ -346,7 +384,10 @@ fn is_core_os_process(
             exe_lower.starts_with("/system/") || exe_lower.starts_with("/usr/libexec/")
         }
         TargetOs::Windows => {
-            if WINDOWS_CORE_DAEMONS.iter().any(|d| name_lower == *d) {
+            if WINDOWS_CORE_DAEMONS
+                .iter()
+                .any(|d| name_lower == *d || cmd_bin == *d)
+            {
                 return true;
             }
             let normalized = exe_lower.replace('/', "\\");
@@ -361,13 +402,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn classifies_linux_core_os_daemons_as_system() {
+    fn classifies_linux_core_os_daemons_and_truncated_comm_as_system() {
         let res = classify_process(
             &ClassificationInput {
-                process_name: "systemd-resolved",
-                exe_path: Some("/usr/lib/systemd/systemd-resolved"),
+                process_name: "systemd-resolve",
+                exe_path: None,
                 command_line: "/usr/lib/systemd/systemd-resolved",
                 port: 53,
+                uid: Some(991),
+                is_docker: false,
                 framework: None,
                 runtime: None,
             },
@@ -377,24 +420,74 @@ mod tests {
         assert_eq!(res.category, AppCategory::System);
         assert_eq!(res.source_type, SourceType::System);
         assert_eq!(res.service_manager, ServiceManager::Systemd);
-    }
 
-    #[test]
-    fn surfaces_third_party_apps_by_default_on_linux() {
-        let res = classify_process(
+        let cups = classify_process(
             &ClassificationInput {
-                process_name: "ollama",
-                exe_path: Some("/usr/local/bin/ollama"),
-                command_line: "/usr/local/bin/ollama serve",
-                port: 11434,
+                process_name: "cupsd",
+                exe_path: None,
+                command_line: "/usr/sbin/cupsd -l",
+                port: 631,
+                uid: Some(0),
+                is_docker: false,
                 framework: None,
                 runtime: None,
             },
             TargetOs::Linux,
         );
-        assert!(!res.is_core_os);
-        assert_eq!(res.category, AppCategory::ThirdParty);
-        assert_eq!(res.source_type, SourceType::ThirdParty);
+        assert!(cups.is_core_os);
+        assert_eq!(cups.category, AppCategory::System);
+
+        let unresolved_root = classify_process(
+            &ClassificationInput {
+                process_name: "system/root",
+                exe_path: None,
+                command_line: "",
+                port: 9999,
+                uid: Some(0),
+                is_docker: false,
+                framework: None,
+                runtime: None,
+            },
+            TargetOs::Linux,
+        );
+        assert!(unresolved_root.is_core_os);
+        assert_eq!(unresolved_root.category, AppCategory::System);
+    }
+
+    #[test]
+    fn surfaces_third_party_apps_and_apache_correctly() {
+        let ollama = classify_process(
+            &ClassificationInput {
+                process_name: "ollama",
+                exe_path: None,
+                command_line: "/usr/local/bin/ollama serve",
+                port: 11434,
+                uid: Some(997),
+                is_docker: false,
+                framework: None,
+                runtime: None,
+            },
+            TargetOs::Linux,
+        );
+        assert!(!ollama.is_core_os);
+        assert_eq!(ollama.category, AppCategory::ThirdParty);
+        assert_eq!(ollama.source_type, SourceType::ThirdParty);
+
+        let apache = classify_process(
+            &ClassificationInput {
+                process_name: "apache2",
+                exe_path: None,
+                command_line: "/usr/sbin/apache2 -k start",
+                port: 80,
+                uid: Some(0),
+                is_docker: false,
+                framework: None,
+                runtime: None,
+            },
+            TargetOs::Linux,
+        );
+        assert!(!apache.is_core_os);
+        assert_eq!(apache.category, AppCategory::Dev);
     }
 
     #[test]
@@ -405,6 +498,8 @@ mod tests {
                 exe_path: Some("/usr/sbin/mDNSResponder"),
                 command_line: "/usr/sbin/mDNSResponder",
                 port: 5353,
+                uid: Some(65),
+                is_docker: false,
                 framework: None,
                 runtime: None,
             },
@@ -419,6 +514,8 @@ mod tests {
                 exe_path: Some("/Applications/Spotify.app/Contents/MacOS/Spotify"),
                 command_line: "/Applications/Spotify.app/Contents/MacOS/Spotify",
                 port: 57621,
+                uid: Some(501),
+                is_docker: false,
                 framework: None,
                 runtime: None,
             },
@@ -436,6 +533,8 @@ mod tests {
                 exe_path: Some(r"C:\Windows\System32\svchost.exe"),
                 command_line: r"C:\Windows\System32\svchost.exe -k netsvcs",
                 port: 135,
+                uid: None,
+                is_docker: false,
                 framework: None,
                 runtime: None,
             },
@@ -451,6 +550,8 @@ mod tests {
                 exe_path: Some(r"C:\Program Files\nodejs\node.exe"),
                 command_line: "node server.js",
                 port: 3000,
+                uid: None,
+                is_docker: false,
                 framework: Some("Next.js"),
                 runtime: Some("Node.js"),
             },
@@ -468,6 +569,8 @@ mod tests {
                 exe_path: Some("/usr/bin/ssh"),
                 command_line: "ssh -N -L 5433:localhost:5432 prod-bastion",
                 port: 5433,
+                uid: Some(1000),
+                is_docker: false,
                 framework: None,
                 runtime: None,
             },
@@ -482,6 +585,8 @@ mod tests {
                 exe_path: Some("/usr/local/bin/kubectl"),
                 command_line: "kubectl port-forward svc/api 8080:80 -n staging",
                 port: 8080,
+                uid: Some(1000),
+                is_docker: false,
                 framework: None,
                 runtime: None,
             },
@@ -491,10 +596,12 @@ mod tests {
 
         let docker = classify_process(
             &ClassificationInput {
-                process_name: "docker-proxy",
-                exe_path: Some("/usr/bin/docker-proxy"),
-                command_line: "/usr/bin/docker-proxy -proto tcp -host-port 5432",
-                port: 5432,
+                process_name: "system/root",
+                exe_path: None,
+                command_line: "",
+                port: 8001,
+                uid: Some(0),
+                is_docker: true,
                 framework: None,
                 runtime: None,
             },
@@ -502,6 +609,7 @@ mod tests {
         );
         assert_eq!(docker.category, AppCategory::Docker);
         assert_eq!(docker.service_manager, ServiceManager::Docker);
+        assert!(!docker.is_core_os);
 
         let pm2 = classify_process(
             &ClassificationInput {
@@ -509,6 +617,8 @@ mod tests {
                 exe_path: Some("/usr/bin/node"),
                 command_line: "node /home/user/.npm-global/lib/node_modules/pm2/bin/pm2",
                 port: 4000,
+                uid: Some(1000),
+                is_docker: false,
                 framework: Some("Express"),
                 runtime: Some("Node.js"),
             },

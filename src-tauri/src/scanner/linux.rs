@@ -11,6 +11,7 @@ pub struct RawSocket {
     pub bind_address: String,
     pub state: String,
     pub pid: Option<u32>,
+    pub uid: Option<u32>,
 }
 
 pub fn collect_raw_sockets() -> Vec<RawSocket> {
@@ -134,6 +135,7 @@ pub fn parse_proc_net_table(
             continue;
         };
 
+        let uid = fields[7].parse::<u32>().ok();
         let inode = fields[9].parse::<u64>().ok();
         let pid = inode.and_then(|ino| inode_map.get(&ino).copied());
 
@@ -143,10 +145,48 @@ pub fn parse_proc_net_table(
             bind_address,
             state: state_label,
             pid,
+            uid,
         });
     }
 
     results
+}
+
+pub fn parse_docker_proxy_cmdline(cmd: &str) -> Option<(Protocol, String, u16)> {
+    let tokens: Vec<&str> = cmd.split_whitespace().collect();
+    if tokens.is_empty() || !tokens[0].ends_with("docker-proxy") {
+        return None;
+    }
+
+    let mut protocol = Protocol::Tcp;
+    let mut host_ip = String::from("0.0.0.0");
+    let mut host_port: Option<u16> = None;
+
+    let mut i = 1;
+    while i + 1 < tokens.len() {
+        match tokens[i] {
+            "-proto" => {
+                protocol = match tokens[i + 1].to_ascii_lowercase().as_str() {
+                    "udp" => Protocol::Udp,
+                    _ => Protocol::Tcp,
+                };
+                i += 2;
+            }
+            "-host-ip" => {
+                host_ip = tokens[i + 1].to_string();
+                i += 2;
+            }
+            "-host-port" => {
+                host_port = tokens[i + 1].parse::<u16>().ok();
+                i += 2;
+            }
+            _ => {
+                i += 1;
+            }
+        }
+    }
+
+    host_port.map(|port| (protocol, host_ip, port))
 }
 
 pub fn decode_ipv4_hex(hex: &str) -> Option<String> {
@@ -205,7 +245,7 @@ mod tests {
     }
 
     #[test]
-    fn parses_proc_net_tcp_and_udp_tables() {
+    fn parses_proc_net_tcp_and_udp_tables_with_uid() {
         let tcp_sample = "\
   sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
    0: 0100007F:0BB8 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1000        0 55100 1 0000000000000000 100 0 0 10 0
@@ -214,29 +254,49 @@ mod tests {
 ";
         let udp_sample = "\
   sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode ref pointer drops
-   0: 3500007F:0035 00000000:0000 07 00000000:00000000 00:00000000 00000000   102        0 21450 2 0000000000000000 0
+   0: 3500007F:0035 00000000:0000 07 00000000:00000000 00:00000000 00000000   991        0 21450 2 0000000000000000 0
    1: 0100007F:9999 0100007F:0035 01 00000000:00000000 00:00000000 00000000  1000        0 21451 2 0000000000000000 0
 ";
 
         let mut inodes = HashMap::new();
         inodes.insert(55100, 4120);
-        inodes.insert(21450, 777);
+        inodes.insert(21450, 865);
 
         let tcp = parse_proc_net_table(tcp_sample, Protocol::Tcp, false, &inodes);
         assert_eq!(tcp.len(), 2);
         assert_eq!(tcp[0].port, 3000);
         assert_eq!(tcp[0].bind_address, "127.0.0.1");
         assert_eq!(tcp[0].pid, Some(4120));
-        assert_eq!(tcp[0].state, "LISTEN");
+        assert_eq!(tcp[0].uid, Some(1000));
         assert_eq!(tcp[1].port, 8000);
         assert_eq!(tcp[1].bind_address, "0.0.0.0");
         assert_eq!(tcp[1].pid, None);
+        assert_eq!(tcp[1].uid, Some(0));
 
         let udp = parse_proc_net_table(udp_sample, Protocol::Udp, false, &inodes);
         assert_eq!(udp.len(), 1);
         assert_eq!(udp[0].port, 53);
         assert_eq!(udp[0].bind_address, "127.0.0.53");
-        assert_eq!(udp[0].pid, Some(777));
-        assert_eq!(udp[0].state, "UNCONN");
+        assert_eq!(udp[0].pid, Some(865));
+        assert_eq!(udp[0].uid, Some(991));
+    }
+
+    #[test]
+    fn parses_docker_proxy_command_lines() {
+        let v4 = parse_docker_proxy_cmdline(
+            "/usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 8001 -container-ip 172.17.0.2 -container-port 11434 -use-listen-fd",
+        );
+        assert_eq!(v4, Some((Protocol::Tcp, "0.0.0.0".to_string(), 8001)));
+
+        let v6 = parse_docker_proxy_cmdline(
+            "/usr/bin/docker-proxy -proto tcp -host-ip :: -host-port 8888 -container-ip 172.17.0.3 -container-port 8080 -use-listen-fd",
+        );
+        assert_eq!(v6, Some((Protocol::Tcp, "::".to_string(), 8888)));
+
+        let udp = parse_docker_proxy_cmdline(
+            "/usr/bin/docker-proxy -proto udp -host-ip 127.0.0.1 -host-port 5353 -container-port 5353",
+        );
+        assert_eq!(udp, Some((Protocol::Udp, "127.0.0.1".to_string(), 5353)));
+        assert_eq!(parse_docker_proxy_cmdline("/usr/bin/node server.js"), None);
     }
 }

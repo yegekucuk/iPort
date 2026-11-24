@@ -32,6 +32,7 @@ function makeEntry(overrides: Partial<PortEntry>): PortEntry {
     framework: "Next.js",
     runtime: "Node.js",
     serviceManager: "none",
+    docker: null,
     availableActions: ["open_browser", "copy_url", "stop", "force_kill"],
     ...overrides,
   };
@@ -94,11 +95,32 @@ describe("filterEntries", () => {
     isCoreOs: true,
   });
 
-  const all = [devEntry, thirdPartyEntry, osEntry];
+  const dockerEntry = makeEntry({
+    id: "docker-8888",
+    port: 8888,
+    processName: "docker-proxy",
+    framework: null,
+    runtime: null,
+    projectName: "hermes",
+    sourceType: "docker",
+    category: "docker",
+    serviceManager: "docker",
+    docker: {
+      containerId: "abcdef123456",
+      containerName: "hermes-searxng",
+      image: "searxng/searxng",
+      status: "Up 3 hours",
+      containerPort: 8080,
+      composeProject: "hermes",
+      composeService: "searxng",
+    },
+  });
 
-  it("hides core OS ports on 'all' while preserving 3rd-party apps", () => {
+  const all = [devEntry, dockerEntry, thirdPartyEntry, osEntry];
+
+  it("hides core OS ports on 'all' while preserving 3rd-party and docker apps", () => {
     const visible = filterEntries(all, "all", "");
-    expect(visible.map((e) => e.id)).toEqual(["dev-3000", "3p-11434"]);
+    expect(visible.map((e) => e.id)).toEqual(["dev-3000", "docker-8888", "3p-11434"]);
   });
 
   it("reveals core OS ports only on 'system' chip", () => {
@@ -106,10 +128,12 @@ describe("filterEntries", () => {
     expect(systemOnly.map((e) => e.id)).toEqual(["os-53"]);
   });
 
-  it("filters by category chip and search query", () => {
+  it("filters by category chip and search query including Docker metadata", () => {
     expect(filterEntries(all, "third_party", "").map((e) => e.id)).toEqual(["3p-11434"]);
+    expect(filterEntries(all, "docker", "").map((e) => e.id)).toEqual(["docker-8888"]);
     expect(filterEntries(all, "all", ":3000").map((e) => e.id)).toEqual(["dev-3000"]);
     expect(filterEntries(all, "all", "ollama").map((e) => e.id)).toEqual(["3p-11434"]);
     expect(filterEntries(all, "all", "next.js").map((e) => e.id)).toEqual(["dev-3000"]);
+    expect(filterEntries(all, "all", "searxng").map((e) => e.id)).toEqual(["docker-8888"]);
   });
 });

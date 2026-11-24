@@ -35,6 +35,16 @@ export type ManagedAction =
   | "reveal_folder"
   | "open_ide";
 
+export interface DockerMeta {
+  containerId: string;
+  containerName: string;
+  image: string;
+  status: string | null;
+  containerPort: number;
+  composeProject: string | null;
+  composeService: string | null;
+}
+
 export interface PortEntry {
   id: string;
   port: number;
@@ -57,6 +67,7 @@ export interface PortEntry {
   framework: string | null;
   runtime: string | null;
   serviceManager: ServiceManager;
+  docker: DockerMeta | null;
   availableActions: ManagedAction[];
 }
 

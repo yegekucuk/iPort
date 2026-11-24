@@ -4,6 +4,7 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::RwLock;
 
+use crate::enrichers::docker::fetch_docker_snapshot;
 use crate::models::PortSnapshot;
 use crate::scanner::PortScanner;
 
@@ -26,23 +27,16 @@ impl AppState {
             latest: Arc::new(RwLock::new(PortSnapshot::default())),
         }
     }
-
-    pub fn scan_blocking_sync(&self) -> PortSnapshot {
-        let mut scanner = self
-            .scanner
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        scanner.scan()
-    }
 }
 
 pub async fn refresh_now(state: &AppState) -> PortSnapshot {
+    let docker_snapshot = fetch_docker_snapshot().await;
     let scanner = state.scanner.clone();
     let snapshot = tokio::task::spawn_blocking(move || {
         let mut guard = scanner
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        guard.scan()
+        guard.scan_with_docker(&docker_snapshot)
     })
     .await
     .unwrap_or_default();

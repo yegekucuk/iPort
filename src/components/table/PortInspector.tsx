@@ -57,7 +57,7 @@ export function PortInspector({
               {entry.protocol}
             </span>
             <span className="text-[13px] font-medium text-[var(--window-fg-color)] truncate">
-              {entry.framework || entry.processName}
+              {entry.docker?.containerName || entry.framework || entry.processName}
             </span>
             {entry.projectName && (
               <span className="text-[12px] text-[var(--muted-fg-color)] truncate">
@@ -140,6 +140,32 @@ export function PortInspector({
 
         {/* Boxed List Rows */}
         <div className="divide-y divide-[var(--hairline-color)] text-[12px]">
+          {entry.docker && (
+            <div className="px-3.5 py-1.5 flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="w-24 shrink-0 text-[var(--muted-fg-color)]">
+                  Container
+                </span>
+                <code className="font-mono-tabular selectable-text text-[var(--window-fg-color)] truncate">
+                  {entry.docker.image}
+                </code>
+              </div>
+              <div className="font-mono-tabular text-[11.5px] text-[var(--muted-fg-color)] flex items-center gap-3 shrink-0">
+                <span>
+                  :{entry.port} → :{entry.docker.containerPort}/{entry.protocol}
+                </span>
+                {entry.docker.composeProject && (
+                  <span>
+                    {entry.docker.composeProject}
+                    {entry.docker.composeService
+                      ? `/${entry.docker.composeService}`
+                      : ""}
+                  </span>
+                )}
+                {entry.docker.status && <span>{entry.docker.status}</span>}
+              </div>
+            </div>
+          )}
           <div className="px-3.5 py-1.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <span className="w-24 shrink-0 text-[var(--muted-fg-color)]">

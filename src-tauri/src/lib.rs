@@ -13,10 +13,6 @@ use crate::monitor::{start_polling, AppState};
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app_state = AppState::new();
-    let initial_snapshot = app_state.scan_blocking_sync();
-    if let Ok(mut latest) = app_state.latest.try_write() {
-        *latest = initial_snapshot;
-    }
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())

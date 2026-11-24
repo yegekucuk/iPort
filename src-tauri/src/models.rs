@@ -56,6 +56,18 @@ pub enum ManagedAction {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct DockerMeta {
+    pub container_id: String,
+    pub container_name: String,
+    pub image: String,
+    pub status: Option<String>,
+    pub container_port: u16,
+    pub compose_project: Option<String>,
+    pub compose_service: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PortEntry {
     pub id: String,
     pub port: u16,
@@ -78,6 +90,7 @@ pub struct PortEntry {
     pub framework: Option<String>,
     pub runtime: Option<String>,
     pub service_manager: ServiceManager,
+    pub docker: Option<DockerMeta>,
     pub available_actions: Vec<ManagedAction>,
 }
 

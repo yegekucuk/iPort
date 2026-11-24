@@ -45,6 +45,7 @@ const PREVIEW_SNAPSHOT: PortSnapshot = {
       framework: "Next.js",
       runtime: "Node.js",
       serviceManager: "none",
+      docker: null,
       availableActions: ["open_browser", "copy_url", "copy_port", "reveal_folder", "open_ide", "stop", "force_kill"],
     },
     {
@@ -59,7 +60,7 @@ const PREVIEW_SNAPSHOT: PortSnapshot = {
       exePath: "/usr/bin/docker-proxy",
       commandLine: "/usr/bin/docker-proxy -proto tcp -host-ip 127.0.0.1 -host-port 5432 -container-port 5432",
       cwd: null,
-      projectName: null,
+      projectName: "iport-stack",
       cpuPercent: 0.2,
       memoryBytes: 22 * 1024 * 1024,
       uptimeSecs: 14800,
@@ -69,6 +70,15 @@ const PREVIEW_SNAPSHOT: PortSnapshot = {
       framework: null,
       runtime: null,
       serviceManager: "docker",
+      docker: {
+        containerId: "e2d4f6a8c012",
+        containerName: "postgres-dev",
+        image: "postgres:16-alpine",
+        status: "Up 4 hours",
+        containerPort: 5432,
+        composeProject: "iport-stack",
+        composeService: "db",
+      },
       availableActions: ["open_browser", "copy_url", "copy_port", "stop", "force_kill"],
     },
     {
@@ -93,6 +103,7 @@ const PREVIEW_SNAPSHOT: PortSnapshot = {
       framework: null,
       runtime: null,
       serviceManager: "none",
+      docker: null,
       availableActions: ["open_browser", "copy_url", "copy_port", "reveal_folder", "open_ide", "stop", "force_kill"],
     },
     {
@@ -117,6 +128,7 @@ const PREVIEW_SNAPSHOT: PortSnapshot = {
       framework: "Uvicorn",
       runtime: "Python",
       serviceManager: "none",
+      docker: null,
       availableActions: ["open_browser", "copy_url", "copy_port", "reveal_folder", "open_ide", "stop", "force_kill"],
     },
     {
@@ -141,6 +153,7 @@ const PREVIEW_SNAPSHOT: PortSnapshot = {
       framework: null,
       runtime: null,
       serviceManager: "none",
+      docker: null,
       availableActions: ["open_browser", "copy_url", "copy_port", "reveal_folder", "open_ide", "stop", "force_kill"],
     },
     {
@@ -165,6 +178,7 @@ const PREVIEW_SNAPSHOT: PortSnapshot = {
       framework: null,
       runtime: null,
       serviceManager: "systemd",
+      docker: null,
       availableActions: ["copy_url", "copy_port", "stop", "force_kill"],
     },
   ],

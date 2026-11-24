@@ -9,6 +9,7 @@ pub struct RawSocket {
     pub bind_address: String,
     pub state: String,
     pub pid: Option<u32>,
+    pub uid: Option<u32>,
 }
 
 pub fn collect_raw_sockets() -> Vec<RawSocket> {
@@ -31,6 +32,7 @@ pub fn collect_raw_sockets() -> Vec<RawSocket> {
                         bind_address: tcp.local_addr.to_string(),
                         state: "LISTEN".to_string(),
                         pid,
+                        uid: None,
                     });
                 }
             }
@@ -42,6 +44,7 @@ pub fn collect_raw_sockets() -> Vec<RawSocket> {
                         bind_address: udp.local_addr.to_string(),
                         state: "UNCONN".to_string(),
                         pid,
+                        uid: None,
                     });
                 }
             }

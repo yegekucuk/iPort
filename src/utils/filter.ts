@@ -39,6 +39,10 @@ export function filterEntries(
       entry.pid !== null ? String(entry.pid) : "",
       entry.commandLine,
       entry.cwd ?? "",
+      entry.docker?.containerName ?? "",
+      entry.docker?.image ?? "",
+      entry.docker?.composeProject ?? "",
+      entry.docker?.composeService ?? "",
     ]
       .join(" ")
       .toLowerCase();
