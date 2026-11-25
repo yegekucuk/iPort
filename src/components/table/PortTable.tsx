@@ -69,6 +69,7 @@ export function PortTable({
     columns,
     state: { sorting },
     onSortingChange: setSorting,
+    enableSortingRemoval: false,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getRowId: (row) => row.id,

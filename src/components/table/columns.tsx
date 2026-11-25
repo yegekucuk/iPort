@@ -45,6 +45,7 @@ export function buildPortColumns(
     columnHelper.accessor("port", {
       header: "Port",
       size: 132,
+      sortDescFirst: false,
       cell: (info) => {
         const entry = info.row.original;
         return (
