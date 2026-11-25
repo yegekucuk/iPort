@@ -25,7 +25,7 @@ export function ToastStack({ toasts, onDismiss }: ToastStackProps) {
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
     >
       <div className="pointer-events-auto flex items-center gap-2.5 pl-3.5 pr-2 py-1.5 rounded-full bg-[var(--toast-bg-color)] text-[var(--toast-fg-color)] shadow-lg border border-white/10 text-[12.5px]">
         <span

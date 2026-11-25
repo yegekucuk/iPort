@@ -216,31 +216,35 @@ export function App() {
         previewMode={previewMode}
       />
 
-      <PortTable
-        entries={visibleEntries}
-        orderedEntriesRef={orderedEntriesRef}
-        isLoading={isLoading}
-        selectedId={selectedId}
-        activeChip={activeChip}
-        searchQuery={searchQuery}
-        onSelect={setSelectedId}
-        onClearFilters={handleClearFilters}
-        pendingKillId={pendingKillId}
-        busyPids={busyPids}
-        onOpenBrowser={(entry) => {
-          void handleOpenBrowser(entry);
-        }}
-        onCopyUrl={handleCopyUrl}
-        onOpenIde={(entry) => {
-          void handleOpenIde(entry);
-        }}
-        onStopProcess={(entry) => {
-          void handleStopProcess(entry);
-        }}
-        onForceKillClick={(entry) => {
-          void handleForceKillClick(entry);
-        }}
-      />
+      <div className="relative flex-1 min-h-0 flex flex-col">
+        <PortTable
+          entries={visibleEntries}
+          orderedEntriesRef={orderedEntriesRef}
+          isLoading={isLoading}
+          selectedId={selectedId}
+          activeChip={activeChip}
+          searchQuery={searchQuery}
+          onSelect={setSelectedId}
+          onClearFilters={handleClearFilters}
+          pendingKillId={pendingKillId}
+          busyPids={busyPids}
+          onOpenBrowser={(entry) => {
+            void handleOpenBrowser(entry);
+          }}
+          onCopyUrl={handleCopyUrl}
+          onOpenIde={(entry) => {
+            void handleOpenIde(entry);
+          }}
+          onStopProcess={(entry) => {
+            void handleStopProcess(entry);
+          }}
+          onForceKillClick={(entry) => {
+            void handleForceKillClick(entry);
+          }}
+        />
+
+        <ToastStack toasts={toasts} onDismiss={dismissToast} />
+      </div>
 
       {selectedEntry && (
         <PortInspector
@@ -276,8 +280,6 @@ export function App() {
         error={error}
         onToggleSystem={handleToggleSystem}
       />
-
-      <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
