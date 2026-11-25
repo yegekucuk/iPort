@@ -26,7 +26,7 @@ function categoryBadgeStyle(category: PortEntry["category"]): string {
     case "dev":
       return "bg-[var(--accent-soft-bg)] text-[var(--accent-bg-color)]";
     case "docker":
-      return "bg-sky-500/12 text-sky-600 dark:text-sky-400";
+      return "bg-sky-500/12 text-sky-700 dark:text-sky-400";
     case "service":
       return "bg-amber-500/12 text-amber-700 dark:text-amber-300";
     case "tunnel":
