@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import type { PortEntry } from "../types/port";
 
 interface UseKeyboardNavOptions {
@@ -41,9 +41,12 @@ export function useKeyboardNav({
   onStopProcess,
   onRefresh,
 }: UseKeyboardNavOptions) {
+  const suppressSlashInputRef = useRef(false);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) {
+        suppressSlashInputRef.current = false;
         return;
       }
 
@@ -51,10 +54,13 @@ export function useKeyboardNav({
 
       if (event.key === "/" && !editing) {
         event.preventDefault();
+        suppressSlashInputRef.current = true;
         searchInputRef.current?.focus();
         searchInputRef.current?.select();
         return;
       }
+
+      suppressSlashInputRef.current = false;
 
       if (event.key === "Escape") {
         if (document.activeElement === searchInputRef.current) {
@@ -129,8 +135,42 @@ export function useKeyboardNav({
       }
     };
 
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (suppressSlashInputRef.current && event.key === "/") {
+        event.preventDefault();
+      }
+    };
+
+    const handleBeforeInput = (event: Event) => {
+      const inputEvent = event as InputEvent;
+      if (suppressSlashInputRef.current && inputEvent.data === "/") {
+        event.preventDefault();
+        suppressSlashInputRef.current = false;
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "/") {
+        suppressSlashInputRef.current = false;
+      }
+    };
+
+    const handleWindowBlur = () => {
+      suppressSlashInputRef.current = false;
+    };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keypress", handleKeyPress, true);
+    window.addEventListener("beforeinput", handleBeforeInput, true);
+    window.addEventListener("keyup", handleKeyUp, true);
+    window.addEventListener("blur", handleWindowBlur);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keypress", handleKeyPress, true);
+      window.removeEventListener("beforeinput", handleBeforeInput, true);
+      window.removeEventListener("keyup", handleKeyUp, true);
+      window.removeEventListener("blur", handleWindowBlur);
+    };
   }, [
     entries,
     orderedEntriesRef,
