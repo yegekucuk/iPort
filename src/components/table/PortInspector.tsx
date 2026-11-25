@@ -40,6 +40,14 @@ export function PortInspector({
   const busy = pid !== null && busyPids.has(pid);
   const killArmed = pendingKillId === entry.id;
   const url = buildPortUrl(entry.port, entry.bindAddress);
+  const actions = entry.availableActions;
+  const canOpenBrowser =
+    entry.protocol === "tcp" && actions.includes("open_browser");
+  const canRevealFolder =
+    Boolean(entry.cwd) && actions.includes("reveal_folder");
+  const canOpenIde = Boolean(entry.cwd) && actions.includes("open_ide");
+  const canStop = pid !== null && actions.includes("stop");
+  const canForceKill = pid !== null && actions.includes("force_kill");
 
   return (
     <section
@@ -67,7 +75,7 @@ export function PortInspector({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {entry.protocol === "tcp" && (
+            {canOpenBrowser && (
               <button
                 type="button"
                 onClick={() => onOpenBrowser(entry)}
@@ -78,52 +86,54 @@ export function PortInspector({
               </button>
             )}
 
-            {entry.cwd && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => onRevealFolder(entry.cwd!)}
-                  className="adw-flat-btn h-7 px-2.5 text-[12px] flex items-center gap-1.5 border border-[var(--border-color)] text-[var(--window-fg-color)] cursor-pointer"
-                >
-                  <FolderOpen className="w-3.5 h-3.5" />
-                  <span>Files</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onOpenIde(entry)}
-                  className="adw-flat-btn h-7 px-2.5 text-[12px] flex items-center gap-1.5 border border-[var(--border-color)] text-[var(--window-fg-color)] cursor-pointer"
-                >
-                  <Code2 className="w-3.5 h-3.5" />
-                  <span>IDE</span>
-                </button>
-              </>
+            {canRevealFolder && (
+              <button
+                type="button"
+                onClick={() => onRevealFolder(entry.cwd!)}
+                className="adw-flat-btn h-7 px-2.5 text-[12px] flex items-center gap-1.5 border border-[var(--border-color)] text-[var(--window-fg-color)] cursor-pointer"
+              >
+                <FolderOpen className="w-3.5 h-3.5" />
+                <span>Files</span>
+              </button>
             )}
 
-            {pid !== null && (
-              <>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onStopProcess(entry)}
-                  className="adw-flat-btn h-7 px-2.5 text-[12px] flex items-center gap-1.5 border border-[var(--border-color)] text-[var(--window-fg-color)] disabled:opacity-40 cursor-pointer"
-                >
-                  <Square className="w-3 h-3" />
-                  <span>Stop</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onForceKillClick(entry)}
-                  className={`h-7 px-2.5 text-[12px] flex items-center gap-1.5 font-medium cursor-pointer disabled:opacity-40 ${
-                    killArmed
-                      ? "adw-destructive-btn"
-                      : "adw-flat-btn border border-[var(--border-color)] text-[var(--destructive-bg-color)]"
-                  }`}
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>{killArmed ? "Confirm Force Kill" : "Force Kill"}</span>
-                </button>
-              </>
+            {canOpenIde && (
+              <button
+                type="button"
+                onClick={() => onOpenIde(entry)}
+                className="adw-flat-btn h-7 px-2.5 text-[12px] flex items-center gap-1.5 border border-[var(--border-color)] text-[var(--window-fg-color)] cursor-pointer"
+              >
+                <Code2 className="w-3.5 h-3.5" />
+                <span>IDE</span>
+              </button>
+            )}
+
+            {canStop && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => onStopProcess(entry)}
+                className="adw-flat-btn h-7 px-2.5 text-[12px] flex items-center gap-1.5 border border-[var(--border-color)] text-[var(--window-fg-color)] disabled:opacity-40 cursor-pointer"
+              >
+                <Square className="w-3 h-3" />
+                <span>Stop</span>
+              </button>
+            )}
+
+            {canForceKill && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => onForceKillClick(entry)}
+                className={`h-7 px-2.5 text-[12px] flex items-center gap-1.5 font-medium cursor-pointer disabled:opacity-40 ${
+                  killArmed
+                    ? "adw-destructive-btn"
+                    : "adw-flat-btn border border-[var(--border-color)] text-[var(--destructive-bg-color)]"
+                }`}
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>{killArmed ? "Confirm Force Kill" : "Force Kill"}</span>
+              </button>
             )}
 
             <button

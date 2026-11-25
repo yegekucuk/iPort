@@ -106,13 +106,24 @@ export function useKeyboardNav({
         return;
       }
 
-      if (event.key === "o" && selected.protocol === "tcp") {
+      if (
+        event.key === "o" &&
+        selected.protocol === "tcp" &&
+        selected.availableActions.includes("open_browser")
+      ) {
         event.preventDefault();
         onOpenBrowser(selected);
-      } else if (event.key === "c") {
+      } else if (
+        event.key === "c" &&
+        selected.availableActions.includes("copy_url")
+      ) {
         event.preventDefault();
         onCopyUrl(selected);
-      } else if (event.key === "x" && selected.pid !== null) {
+      } else if (
+        event.key === "x" &&
+        selected.pid !== null &&
+        selected.availableActions.includes("stop")
+      ) {
         event.preventDefault();
         onStopProcess(selected);
       }

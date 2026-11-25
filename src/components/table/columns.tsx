@@ -205,13 +205,20 @@ export function buildPortColumns(
         const pid = entry.pid;
         const busy = pid !== null && callbacks.busyPids.has(pid);
         const killArmed = callbacks.pendingKillId === entry.id;
+        const actions = entry.availableActions;
+        const canOpenBrowser =
+          entry.protocol === "tcp" && actions.includes("open_browser");
+        const canCopyUrl = actions.includes("copy_url");
+        const canOpenIde = Boolean(entry.cwd) && actions.includes("open_ide");
+        const canStop = pid !== null && actions.includes("stop");
+        const canForceKill = pid !== null && actions.includes("force_kill");
 
         return (
           <div
             className="flex items-center justify-end gap-0.5"
             onClick={(e) => e.stopPropagation()}
           >
-            {entry.protocol === "tcp" && (
+            {canOpenBrowser && (
               <button
                 type="button"
                 title="Open in Browser (o)"
@@ -223,17 +230,19 @@ export function buildPortColumns(
               </button>
             )}
 
-            <button
-              type="button"
-              title="Copy URL (c)"
-              aria-label="Copy URL"
-              onClick={() => callbacks.onCopyUrl(entry)}
-              className="adw-flat-btn w-7 h-7 flex items-center justify-center text-[var(--muted-fg-color)] hover:text-[var(--window-fg-color)] cursor-pointer"
-            >
-              <Copy className="w-3.5 h-3.5" />
-            </button>
+            {canCopyUrl && (
+              <button
+                type="button"
+                title="Copy URL (c)"
+                aria-label="Copy URL"
+                onClick={() => callbacks.onCopyUrl(entry)}
+                className="adw-flat-btn w-7 h-7 flex items-center justify-center text-[var(--muted-fg-color)] hover:text-[var(--window-fg-color)] cursor-pointer"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+            )}
 
-            {entry.cwd && (
+            {canOpenIde && (
               <button
                 type="button"
                 title="Open Project in IDE"
@@ -245,43 +254,42 @@ export function buildPortColumns(
               </button>
             )}
 
-            {pid !== null && (
-              <>
+            {canStop && (
+              <button
+                type="button"
+                disabled={busy}
+                title="Graceful Stop (SIGTERM) (x)"
+                aria-label="Graceful Stop"
+                onClick={() => callbacks.onStopProcess(entry)}
+                className="adw-flat-btn w-7 h-7 flex items-center justify-center text-[var(--muted-fg-color)] hover:text-[var(--warning-color)] disabled:opacity-40 cursor-pointer"
+              >
+                <Square className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            {canForceKill &&
+              (killArmed ? (
                 <button
                   type="button"
                   disabled={busy}
-                  title="Graceful Stop (SIGTERM) (x)"
-                  aria-label="Graceful Stop"
-                  onClick={() => callbacks.onStopProcess(entry)}
-                  className="adw-flat-btn w-7 h-7 flex items-center justify-center text-[var(--muted-fg-color)] hover:text-[var(--warning-color)] disabled:opacity-40 cursor-pointer"
+                  title="Click again to send SIGKILL"
+                  onClick={() => callbacks.onForceKillClick(entry)}
+                  className="adw-destructive-btn h-6 px-2 text-[11px] font-medium cursor-pointer"
                 >
-                  <Square className="w-3.5 h-3.5" />
+                  Kill?
                 </button>
-
-                {killArmed ? (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    title="Click again to send SIGKILL"
-                    onClick={() => callbacks.onForceKillClick(entry)}
-                    className="adw-destructive-btn h-6 px-2 text-[11px] font-medium cursor-pointer"
-                  >
-                    Kill?
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    title="Force Kill (SIGKILL)"
-                    aria-label="Force Kill"
-                    onClick={() => callbacks.onForceKillClick(entry)}
-                    className="adw-flat-btn w-7 h-7 flex items-center justify-center text-[var(--muted-fg-color)] hover:text-[var(--destructive-bg-color)] disabled:opacity-40 cursor-pointer"
-                  >
-                    <Zap className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </>
-            )}
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy}
+                  title="Force Kill (SIGKILL)"
+                  aria-label="Force Kill"
+                  onClick={() => callbacks.onForceKillClick(entry)}
+                  className="adw-flat-btn w-7 h-7 flex items-center justify-center text-[var(--muted-fg-color)] hover:text-[var(--destructive-bg-color)] disabled:opacity-40 cursor-pointer"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                </button>
+              ))}
           </div>
         );
       },
