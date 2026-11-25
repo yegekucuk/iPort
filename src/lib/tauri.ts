@@ -3,7 +3,9 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   ActionResult,
   IdeOption,
+  PortEntry,
   PortSnapshot,
+  SnapshotCounts,
   SystemThemeInfo,
 } from "../types/port";
 
@@ -11,18 +13,44 @@ export function isTauriRuntime(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
-const PREVIEW_SNAPSHOT: PortSnapshot = {
-  timestampMs: Date.now(),
-  counts: {
-    totalVisible: 5,
-    dev: 3,
-    docker: 1,
+function computePreviewCounts(entries: PortEntry[]): SnapshotCounts {
+  const counts: SnapshotCounts = {
+    totalVisible: 0,
+    dev: 0,
+    docker: 0,
     services: 0,
-    tunnels: 1,
-    thirdParty: 1,
-    system: 2,
-  },
-  entries: [
+    tunnels: 0,
+    thirdParty: 0,
+    system: 0,
+  };
+  for (const entry of entries) {
+    if (entry.isCoreOs || entry.category === "system") {
+      counts.system += 1;
+      continue;
+    }
+    counts.totalVisible += 1;
+    switch (entry.category) {
+      case "dev":
+        counts.dev += 1;
+        break;
+      case "docker":
+        counts.docker += 1;
+        break;
+      case "service":
+        counts.services += 1;
+        break;
+      case "tunnel":
+        counts.tunnels += 1;
+        break;
+      case "third_party":
+        counts.thirdParty += 1;
+        break;
+    }
+  }
+  return counts;
+}
+
+const PREVIEW_ENTRIES: PortEntry[] = [
     {
       id: "tcp:3000:127.0.0.1:4120",
       port: 3000,
@@ -181,7 +209,12 @@ const PREVIEW_SNAPSHOT: PortSnapshot = {
       docker: null,
       availableActions: ["copy_url", "copy_port", "stop", "force_kill"],
     },
-  ],
+];
+
+const PREVIEW_SNAPSHOT: PortSnapshot = {
+  timestampMs: Date.now(),
+  counts: computePreviewCounts(PREVIEW_ENTRIES),
+  entries: PREVIEW_ENTRIES,
 };
 
 export async function fetchPortSnapshot(): Promise<PortSnapshot> {
