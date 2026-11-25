@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState, type RefObject } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -12,6 +12,7 @@ import { buildPortColumns, type TableActionCallbacks } from "./columns";
 
 interface PortTableProps extends TableActionCallbacks {
   entries: PortEntry[];
+  orderedEntriesRef?: RefObject<PortEntry[]>;
   isLoading: boolean;
   selectedId: string | null;
   activeChip: FilterChip;
@@ -22,6 +23,7 @@ interface PortTableProps extends TableActionCallbacks {
 
 export function PortTable({
   entries,
+  orderedEntriesRef,
   isLoading,
   selectedId,
   activeChip,
@@ -71,6 +73,14 @@ export function PortTable({
     getSortedRowModel: getSortedRowModel(),
     getRowId: (row) => row.id,
   });
+
+  const rows = table.getRowModel().rows;
+
+  useLayoutEffect(() => {
+    if (orderedEntriesRef) {
+      orderedEntriesRef.current = rows.map((row) => row.original);
+    }
+  }, [orderedEntriesRef, rows]);
 
   if (isLoading && entries.length === 0) {
     return (

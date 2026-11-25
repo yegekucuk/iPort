@@ -3,6 +3,7 @@ import type { PortEntry } from "../types/port";
 
 interface UseKeyboardNavOptions {
   entries: PortEntry[];
+  orderedEntriesRef?: RefObject<PortEntry[]>;
   selectedId: string | null;
   searchQuery: string;
   searchInputRef: RefObject<HTMLInputElement | null>;
@@ -29,6 +30,7 @@ function isEditableElement(target: EventTarget | null): boolean {
 
 export function useKeyboardNav({
   entries,
+  orderedEntriesRef,
   selectedId,
   searchQuery,
   searchInputRef,
@@ -73,21 +75,23 @@ export function useKeyboardNav({
         return;
       }
 
+      const navEntries = orderedEntriesRef?.current ?? entries;
+
       if (event.key === "ArrowDown" || event.key === "j") {
-        if (entries.length === 0) return;
+        if (navEntries.length === 0) return;
         event.preventDefault();
-        const idx = entries.findIndex((e) => e.id === selectedId);
-        const nextIdx = idx < 0 ? 0 : Math.min(entries.length - 1, idx + 1);
-        onSelect(entries[nextIdx].id);
+        const idx = navEntries.findIndex((e) => e.id === selectedId);
+        const nextIdx = idx < 0 ? 0 : Math.min(navEntries.length - 1, idx + 1);
+        onSelect(navEntries[nextIdx].id);
         return;
       }
 
       if (event.key === "ArrowUp" || event.key === "k") {
-        if (entries.length === 0) return;
+        if (navEntries.length === 0) return;
         event.preventDefault();
-        const idx = entries.findIndex((e) => e.id === selectedId);
+        const idx = navEntries.findIndex((e) => e.id === selectedId);
         const prevIdx = idx < 0 ? 0 : Math.max(0, idx - 1);
-        onSelect(entries[prevIdx].id);
+        onSelect(navEntries[prevIdx].id);
         return;
       }
 
@@ -97,7 +101,7 @@ export function useKeyboardNav({
         return;
       }
 
-      const selected = entries.find((e) => e.id === selectedId);
+      const selected = navEntries.find((e) => e.id === selectedId);
       if (!selected) {
         return;
       }
@@ -118,6 +122,7 @@ export function useKeyboardNav({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
     entries,
+    orderedEntriesRef,
     selectedId,
     searchQuery,
     searchInputRef,

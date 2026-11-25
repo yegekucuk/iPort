@@ -50,6 +50,7 @@ export function App() {
   } = usePortStore();
 
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const orderedEntriesRef = useRef<PortEntry[]>([]);
   const [, setTick] = useState(0);
 
   // Keep relative timestamp fresh in StatusBar
@@ -177,6 +178,7 @@ export function App() {
 
   useKeyboardNav({
     entries: visibleEntries,
+    orderedEntriesRef,
     selectedId,
     searchQuery,
     searchInputRef,
@@ -216,6 +218,7 @@ export function App() {
 
       <PortTable
         entries={visibleEntries}
+        orderedEntriesRef={orderedEntriesRef}
         isLoading={isLoading}
         selectedId={selectedId}
         activeChip={activeChip}
