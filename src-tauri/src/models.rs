@@ -106,22 +106,12 @@ pub struct SnapshotCounts {
     pub system: usize,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PortSnapshot {
     pub timestamp_ms: u64,
     pub entries: Vec<PortEntry>,
     pub counts: SnapshotCounts,
-}
-
-impl Default for PortSnapshot {
-    fn default() -> Self {
-        Self {
-            timestamp_ms: 0,
-            entries: Vec::new(),
-            counts: SnapshotCounts::default(),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

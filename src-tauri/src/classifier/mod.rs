@@ -171,7 +171,10 @@ pub fn classify_process(input: &ClassificationInput<'_>, os: TargetOs) -> Classi
         .unwrap_or_default();
     let cmd_lower = input.command_line.trim().to_ascii_lowercase();
     let argv0_lower = cmd_lower.split_whitespace().next().unwrap_or("");
-    let cmd_bin = argv0_lower.rsplit('/').next().unwrap_or(argv0_lower);
+    let cmd_bin = argv0_lower
+        .rsplit(['/', '\\'])
+        .next()
+        .unwrap_or(argv0_lower);
     let effective_path = if exe_lower.is_empty() {
         argv0_lower
     } else {

@@ -44,7 +44,7 @@ fn send_termination_signal(pid: u32, force: bool) -> ActionResult {
         }
 
         let err = std::io::Error::last_os_error();
-        return match err.raw_os_error() {
+        match err.raw_os_error() {
             Some(libc::EPERM) => ActionResult {
                 ok: false,
                 message: format!(
@@ -62,7 +62,7 @@ fn send_termination_signal(pid: u32, force: bool) -> ActionResult {
                 message: format!("Failed to send {sig_name} to PID {pid}: {err}"),
                 requires_elevation: false,
             },
-        };
+        }
     }
 
     #[cfg(windows)]

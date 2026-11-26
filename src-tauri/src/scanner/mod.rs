@@ -26,6 +26,16 @@ use macos::collect_raw_sockets;
 use windows::collect_raw_sockets;
 
 #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+struct RawSocketFallback {
+    protocol: Protocol,
+    port: u16,
+    bind_address: String,
+    state: String,
+    pid: Option<u32>,
+    uid: Option<u32>,
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
 fn collect_raw_sockets() -> Vec<RawSocketFallback> {
     Vec::new()
 }
@@ -576,6 +586,7 @@ fn compute_counts(entries: &[PortEntry]) -> SnapshotCounts {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(target_os = "linux")]
     use std::net::TcpListener;
 
     fn fake_proc(pid: u32, ppid: u32, uid: u32, name: &str, cmd: &str) -> ProcSnapshot {
@@ -617,7 +628,8 @@ mod tests {
             ),
         ];
 
-        // Docker proxy resolved by cmdline
+        // Docker proxy resolved by cmdline (Tier A is Linux-only)
+        #[cfg(target_os = "linux")]
         match resolve_unprivileged_process(
             &procs,
             Protocol::Tcp,
