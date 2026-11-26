@@ -51,7 +51,6 @@ pub enum ManagedAction {
     CopyUrl,
     CopyPort,
     RevealFolder,
-    OpenIde,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

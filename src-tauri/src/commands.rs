@@ -47,8 +47,3 @@ pub fn open_in_browser(
 pub fn reveal_in_folder(app: AppHandle, path: String) -> ActionResult {
     actions::reveal_in_folder(&app, &path)
 }
-
-#[tauri::command]
-pub fn open_in_ide(path: String, ide: String) -> ActionResult {
-    actions::open_in_ide(&path, &ide)
-}

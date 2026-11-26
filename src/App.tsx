@@ -10,7 +10,6 @@ import {
   copyToClipboard,
   killProcess,
   openInBrowser,
-  openInIde,
   revealInFolder,
   stopProcess,
 } from "./lib/tauri";
@@ -38,8 +37,6 @@ export function App() {
     setSelectedId,
     theme,
     cycleTheme,
-    preferredIde,
-    setPreferredIde,
     pendingKillId,
     armPendingKill,
     busyPids,
@@ -123,15 +120,6 @@ export function App() {
     [handleActionResult],
   );
 
-  const handleOpenIde = useCallback(
-    async (entry: PortEntry) => {
-      if (!entry.cwd) return;
-      const res = await openInIde(entry.cwd, preferredIde);
-      handleActionResult(res);
-    },
-    [handleActionResult, preferredIde],
-  );
-
   const handleStopProcess = useCallback(
     async (entry: PortEntry) => {
       if (entry.pid === null) return;
@@ -205,8 +193,6 @@ export function App() {
         activeChip={activeChip}
         onChipChange={setActiveChip}
         counts={snapshot.counts}
-        preferredIde={preferredIde}
-        onIdeChange={setPreferredIde}
         theme={theme}
         onCycleTheme={cycleTheme}
         isRefreshing={isRefreshing}
@@ -232,9 +218,6 @@ export function App() {
             void handleOpenBrowser(entry);
           }}
           onCopyUrl={handleCopyUrl}
-          onOpenIde={(entry) => {
-            void handleOpenIde(entry);
-          }}
           onStopProcess={(entry) => {
             void handleStopProcess(entry);
           }}
@@ -260,9 +243,6 @@ export function App() {
           }}
           onRevealFolder={(path) => {
             void handleRevealFolder(path);
-          }}
-          onOpenIde={(entry) => {
-            void handleOpenIde(entry);
           }}
           onStopProcess={(entry) => {
             void handleStopProcess(entry);

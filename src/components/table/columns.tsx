@@ -1,5 +1,5 @@
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
-import { Code2, Copy, ExternalLink, Square, Zap } from "lucide-react";
+import { Copy, ExternalLink, Square, Zap } from "lucide-react";
 import type { PortEntry } from "../../types/port";
 import { categoryLabel } from "../../utils/filter";
 import {
@@ -14,7 +14,6 @@ export interface TableActionCallbacks {
   busyPids: Set<number>;
   onOpenBrowser: (entry: PortEntry) => void;
   onCopyUrl: (entry: PortEntry) => void;
-  onOpenIde: (entry: PortEntry) => void;
   onStopProcess: (entry: PortEntry) => void;
   onForceKillClick: (entry: PortEntry) => void;
 }
@@ -199,7 +198,7 @@ export function buildPortColumns(
     columnHelper.display({
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
-      size: 174,
+      size: 152,
       cell: (info) => {
         const entry = info.row.original;
         const pid = entry.pid;
@@ -209,7 +208,6 @@ export function buildPortColumns(
         const canOpenBrowser =
           entry.protocol === "tcp" && actions.includes("open_browser");
         const canCopyUrl = actions.includes("copy_url");
-        const canOpenIde = Boolean(entry.cwd) && actions.includes("open_ide");
         const canStop = pid !== null && actions.includes("stop");
         const canForceKill = pid !== null && actions.includes("force_kill");
 
@@ -239,18 +237,6 @@ export function buildPortColumns(
                 className="adw-flat-btn w-7 h-7 flex items-center justify-center text-[var(--muted-fg-color)] hover:text-[var(--window-fg-color)] cursor-pointer"
               >
                 <Copy className="w-3.5 h-3.5" />
-              </button>
-            )}
-
-            {canOpenIde && (
-              <button
-                type="button"
-                title="Open Project in IDE"
-                aria-label="Open Project in IDE"
-                onClick={() => callbacks.onOpenIde(entry)}
-                className="adw-flat-btn w-7 h-7 flex items-center justify-center text-[var(--muted-fg-color)] hover:text-[var(--window-fg-color)] cursor-pointer"
-              >
-                <Code2 className="w-3.5 h-3.5" />
               </button>
             )}
 

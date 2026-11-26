@@ -32,8 +32,7 @@ export type ManagedAction =
   | "open_browser"
   | "copy_url"
   | "copy_port"
-  | "reveal_folder"
-  | "open_ide";
+  | "reveal_folder";
 
 export interface DockerMeta {
   containerId: string;
@@ -102,4 +101,3 @@ export interface SystemThemeInfo {
 
 export type FilterChip = "all" | AppCategory;
 export type ThemeMode = "system" | "dark" | "light";
-export type IdeOption = "code" | "cursor" | "zed" | "webstorm" | "idea";

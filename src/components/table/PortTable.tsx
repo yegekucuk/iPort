@@ -34,7 +34,6 @@ export function PortTable({
   busyPids,
   onOpenBrowser,
   onCopyUrl,
-  onOpenIde,
   onStopProcess,
   onForceKillClick,
 }: PortTableProps) {
@@ -49,7 +48,6 @@ export function PortTable({
         busyPids,
         onOpenBrowser,
         onCopyUrl,
-        onOpenIde,
         onStopProcess,
         onForceKillClick,
       }),
@@ -58,7 +56,6 @@ export function PortTable({
       busyPids,
       onOpenBrowser,
       onCopyUrl,
-      onOpenIde,
       onStopProcess,
       onForceKillClick,
     ],

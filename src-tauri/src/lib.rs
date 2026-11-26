@@ -30,7 +30,6 @@ pub fn run() {
             commands::kill_process,
             commands::open_in_browser,
             commands::reveal_in_folder,
-            commands::open_in_ide,
         ])
         .run(tauri::generate_context!())
         .expect("error while running iPort application");

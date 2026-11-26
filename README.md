@@ -70,7 +70,6 @@ All foundational product and technical decisions agreed upon for **iPort**:
   - Open port in default browser (`http://localhost:<port>` / `https://...`)
   - Copy URL or port number to clipboard
   - Reveal working directory in Finder / File Explorer / Files
-  - Open project directory directly in preferred IDE (VS Code, Cursor, JetBrains, etc.)
 - **Docker & Service Logs:**
   - View recent and streaming stdout/stderr logs for Docker containers, Compose services, and supported service managers directly inside the Dashboard.
 - **Local Dev Server Restart (Offline History):**
@@ -168,7 +167,7 @@ iPort/
 │   │   ├── table/              # High-density port table, columns, filter chips
 │   │   ├── popover/            # Compact tray popover & command palette UI
 │   │   ├── logs/               # Container & local process log viewer drawer
-│   │   └── settings/           # Polling interval, hotkeys, IDE, safe list UI
+│   │   └── settings/           # Polling interval, hotkeys, safe list UI
 │   ├── hooks/                  # Tauri IPC event hooks & keyboard navigation
 │   ├── store/                  # UI state, filters, optimistic actions
 │   ├── types/                  # Shared PortEntry, Action, Settings TS models
@@ -202,7 +201,7 @@ iPort/
 - [x] Build **OS vs. 3rd-Party Classifier** for macOS, Linux, and Windows (hide core OS daemons by default; surface all third-party installed programs)
 - [x] Build **Smart Framework & Runtime Detector** (Next.js, Vite, React, Node/Bun/Deno, Python/FastAPI/Uvicorn/Django/Flask, Go, Rust, Postgres, Redis, MongoDB, etc.)
 - [x] Build the **High-Density Dashboard Table** with instant search, multi-column sorting, and quick filter chips (`All`, `Dev`, `Docker`, `Services`, `Tunnels`, `3rd-Party`, `System`)
-- [x] Implement **Quick Developer Actions**: Open in Browser (`http`/`https`), Copy URL/Port, Reveal Project Folder, Open in IDE (VS Code / Cursor / custom)
+- [x] Implement **Quick Developer Actions**: Open in Browser (`http`/`https`), Copy URL/Port, Reveal Project Folder
 - [x] Implement basic local process controls: Graceful Stop (`SIGTERM`) and Force Kill (`SIGKILL`)
 
 ### Phase 2 — Hybrid UX: System Tray Popover, Live Badge & Global Hotkey
@@ -239,7 +238,7 @@ iPort/
 - [ ] Implement **Root / Admin Elevated Kill** via native OS elevation prompts (macOS Authorization, Linux `pkexec`, Windows UAC)
 
 ### Phase 6 — Polish, Settings, Packaging & Release
-- [ ] Build comprehensive **Settings Panel**: configurable polling interval, default IDE selector, global shortcut customization, OS-noise allow/deny overrides, default safe list, theme override (`System` / `Dark` / `Light`)
+- [ ] Build comprehensive **Settings Panel**: configurable polling interval, global shortcut customization, OS-noise allow/deny overrides, default safe list, theme override (`System` / `Dark` / `Light`)
 - [ ] Optimize memory & CPU overhead under heavy port loads (100+ listening sockets & multi-container stacks)
 - [ ] Configure cross-platform release pipelines & installers (`.dmg` for macOS Apple Silicon & Intel, `.msi`/`.exe` for Windows, `.AppImage`/`.deb` for Linux)
 - [ ] Add code signing, notarization, and in-app auto-updater

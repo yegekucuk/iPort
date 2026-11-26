@@ -287,7 +287,6 @@ impl PortScanner {
             available_actions.push(ManagedAction::CopyPort);
             if cwd.is_some() {
                 available_actions.push(ManagedAction::RevealFolder);
-                available_actions.push(ManagedAction::OpenIde);
             }
             if resolved_pid.is_some() {
                 available_actions.push(ManagedAction::Stop);

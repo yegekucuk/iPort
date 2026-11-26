@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchSystemTheme } from "../lib/tauri";
-import type { FilterChip, IdeOption, SystemThemeInfo, ThemeMode } from "../types/port";
+import type { FilterChip, SystemThemeInfo, ThemeMode } from "../types/port";
 
 export interface ToastItem {
   id: number;
@@ -9,7 +9,6 @@ export interface ToastItem {
 }
 
 const THEME_STORAGE_KEY = "iport:theme";
-const IDE_STORAGE_KEY = "iport:ide";
 
 function loadInitialTheme(): ThemeMode {
   try {
@@ -23,31 +22,12 @@ function loadInitialTheme(): ThemeMode {
   return "system";
 }
 
-function loadInitialIde(): IdeOption {
-  try {
-    const saved = localStorage.getItem(IDE_STORAGE_KEY);
-    if (
-      saved === "code" ||
-      saved === "cursor" ||
-      saved === "zed" ||
-      saved === "webstorm" ||
-      saved === "idea"
-    ) {
-      return saved;
-    }
-  } catch {
-    // Ignore storage errors
-  }
-  return "code";
-}
-
 export function usePortStore() {
   const [activeChip, setActiveChip] = useState<FilterChip>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [theme, setThemeState] = useState<ThemeMode>(loadInitialTheme);
   const [systemTheme, setSystemTheme] = useState<SystemThemeInfo | null>(null);
-  const [preferredIde, setPreferredIdeState] = useState<IdeOption>(loadInitialIde);
   const [pendingKillId, setPendingKillId] = useState<string | null>(null);
   const [busyPids, setBusyPids] = useState<Set<number>>(new Set());
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -104,15 +84,6 @@ export function usePortStore() {
     });
   }, []);
 
-  const setPreferredIde = useCallback((next: IdeOption) => {
-    setPreferredIdeState(next);
-    try {
-      localStorage.setItem(IDE_STORAGE_KEY, next);
-    } catch {
-      // Ignore storage errors
-    }
-  }, []);
-
   const pushToast = useCallback((kind: ToastItem["kind"], message: string) => {
     toastCounter.current += 1;
     const id = toastCounter.current;
@@ -163,8 +134,6 @@ export function usePortStore() {
     setTheme,
     cycleTheme,
     systemTheme,
-    preferredIde,
-    setPreferredIde,
     pendingKillId,
     armPendingKill,
     busyPids,

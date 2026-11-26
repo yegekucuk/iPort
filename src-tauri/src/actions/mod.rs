@@ -1,5 +1,6 @@
 use std::path::Path;
-use std::process::{Command, Stdio};
+#[cfg(any(target_os = "linux", windows))]
+use std::process::Command;
 
 use tauri::AppHandle;
 use tauri_plugin_opener::OpenerExt;
@@ -169,56 +170,6 @@ pub fn reveal_in_folder(app: &AppHandle, path: &str) -> ActionResult {
         Err(err) => ActionResult {
             ok: false,
             message: format!("Could not open folder {path}: {err}"),
-            requires_elevation: false,
-        },
-    }
-}
-
-pub fn open_in_ide(path: &str, ide: &str) -> ActionResult {
-    let target = Path::new(path);
-    if !target.exists() {
-        return ActionResult {
-            ok: false,
-            message: format!("Working directory does not exist: {path}"),
-            requires_elevation: false,
-        };
-    }
-
-    let bin = match ide.trim() {
-        "code" => "code",
-        "cursor" => "cursor",
-        "zed" => "zed",
-        "webstorm" => "webstorm",
-        "idea" => "idea",
-        other => {
-            return ActionResult {
-                ok: false,
-                message: format!("Unsupported IDE selection: {other}"),
-                requires_elevation: false,
-            };
-        }
-    };
-
-    match Command::new(bin)
-        .arg(path)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-    {
-        Ok(_) => ActionResult {
-            ok: true,
-            message: format!("Opened project in {bin}."),
-            requires_elevation: false,
-        },
-        Err(err) if err.kind() == std::io::ErrorKind::NotFound => ActionResult {
-            ok: false,
-            message: format!("'{bin}' CLI was not found in PATH."),
-            requires_elevation: false,
-        },
-        Err(err) => ActionResult {
-            ok: false,
-            message: format!("Failed to launch {bin}: {err}"),
             requires_elevation: false,
         },
     }

@@ -7,7 +7,7 @@ import {
   Sun,
   X,
 } from "lucide-react";
-import type { FilterChip, IdeOption, SnapshotCounts, ThemeMode } from "../types/port";
+import type { FilterChip, SnapshotCounts, ThemeMode } from "../types/port";
 
 interface TopBarProps {
   searchInputRef: RefObject<HTMLInputElement | null>;
@@ -16,22 +16,12 @@ interface TopBarProps {
   activeChip: FilterChip;
   onChipChange: (chip: FilterChip) => void;
   counts: SnapshotCounts;
-  preferredIde: IdeOption;
-  onIdeChange: (ide: IdeOption) => void;
   theme: ThemeMode;
   onCycleTheme: () => void;
   isRefreshing: boolean;
   onRefresh: () => void;
   previewMode: boolean;
 }
-
-const IDE_OPTIONS: Array<{ value: IdeOption; label: string }> = [
-  { value: "code", label: "VS Code" },
-  { value: "cursor", label: "Cursor" },
-  { value: "zed", label: "Zed" },
-  { value: "webstorm", label: "WebStorm" },
-  { value: "idea", label: "IntelliJ" },
-];
 
 export function TopBar({
   searchInputRef,
@@ -40,8 +30,6 @@ export function TopBar({
   activeChip,
   onChipChange,
   counts,
-  preferredIde,
-  onIdeChange,
   theme,
   onCycleTheme,
   isRefreshing,
@@ -119,23 +107,6 @@ export function TopBar({
 
         {/* GNOME Flat Toolbar Actions */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <label className="sr-only" htmlFor="ide-select">
-            Preferred IDE
-          </label>
-          <select
-            id="ide-select"
-            value={preferredIde}
-            onChange={(e) => onIdeChange(e.target.value as IdeOption)}
-            title="Preferred IDE for Open in IDE"
-            className="h-[30px] px-2 rounded-[6px] bg-[var(--entry-bg-color)] border border-[var(--border-color)] text-[12px] text-[var(--window-fg-color)] cursor-pointer"
-          >
-            {IDE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-
           <button
             type="button"
             onClick={onRefresh}

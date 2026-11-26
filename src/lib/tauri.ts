@@ -2,7 +2,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   ActionResult,
-  IdeOption,
   PortEntry,
   PortSnapshot,
   SnapshotCounts,
@@ -74,7 +73,7 @@ const PREVIEW_ENTRIES: PortEntry[] = [
       runtime: "Node.js",
       serviceManager: "none",
       docker: null,
-      availableActions: ["open_browser", "copy_url", "copy_port", "reveal_folder", "open_ide", "stop", "force_kill"],
+      availableActions: ["open_browser", "copy_url", "copy_port", "reveal_folder", "stop", "force_kill"],
     },
     {
       id: "tcp:5432:127.0.0.1:2890",
@@ -132,7 +131,7 @@ const PREVIEW_ENTRIES: PortEntry[] = [
       runtime: null,
       serviceManager: "none",
       docker: null,
-      availableActions: ["open_browser", "copy_url", "copy_port", "reveal_folder", "open_ide", "stop", "force_kill"],
+      availableActions: ["open_browser", "copy_url", "copy_port", "reveal_folder", "stop", "force_kill"],
     },
     {
       id: "tcp:8000:0.0.0.0:4892",
@@ -157,7 +156,7 @@ const PREVIEW_ENTRIES: PortEntry[] = [
       runtime: "Python",
       serviceManager: "none",
       docker: null,
-      availableActions: ["open_browser", "copy_url", "copy_port", "reveal_folder", "open_ide", "stop", "force_kill"],
+      availableActions: ["open_browser", "copy_url", "copy_port", "reveal_folder", "stop", "force_kill"],
     },
     {
       id: "tcp:11434:127.0.0.1:2104",
@@ -182,7 +181,7 @@ const PREVIEW_ENTRIES: PortEntry[] = [
       runtime: null,
       serviceManager: "none",
       docker: null,
-      availableActions: ["open_browser", "copy_url", "copy_port", "reveal_folder", "open_ide", "stop", "force_kill"],
+      availableActions: ["open_browser", "copy_url", "copy_port", "reveal_folder", "stop", "force_kill"],
     },
     {
       id: "udp:53:127.0.0.53:612",
@@ -284,13 +283,6 @@ export async function revealInFolder(path: string): Promise<ActionResult> {
     return { ok: false, message: "File manager action requires Tauri desktop runtime.", requiresElevation: false };
   }
   return invoke<ActionResult>("reveal_in_folder", { path });
-}
-
-export async function openInIde(path: string, ide: IdeOption): Promise<ActionResult> {
-  if (!isTauriRuntime()) {
-    return { ok: false, message: "IDE launcher requires Tauri desktop runtime.", requiresElevation: false };
-  }
-  return invoke<ActionResult>("open_in_ide", { path, ide });
 }
 
 export async function copyToClipboard(text: string): Promise<boolean> {

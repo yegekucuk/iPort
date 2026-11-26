@@ -1,5 +1,4 @@
 import {
-  Code2,
   Copy,
   ExternalLink,
   FolderOpen,
@@ -19,7 +18,6 @@ interface PortInspectorProps {
   onCopyText: (text: string, label: string) => void;
   onOpenBrowser: (entry: PortEntry) => void;
   onRevealFolder: (path: string) => void;
-  onOpenIde: (entry: PortEntry) => void;
   onStopProcess: (entry: PortEntry) => void;
   onForceKillClick: (entry: PortEntry) => void;
 }
@@ -32,7 +30,6 @@ export function PortInspector({
   onCopyText,
   onOpenBrowser,
   onRevealFolder,
-  onOpenIde,
   onStopProcess,
   onForceKillClick,
 }: PortInspectorProps) {
@@ -45,7 +42,6 @@ export function PortInspector({
     entry.protocol === "tcp" && actions.includes("open_browser");
   const canRevealFolder =
     Boolean(entry.cwd) && actions.includes("reveal_folder");
-  const canOpenIde = Boolean(entry.cwd) && actions.includes("open_ide");
   const canStop = pid !== null && actions.includes("stop");
   const canForceKill = pid !== null && actions.includes("force_kill");
 
@@ -94,17 +90,6 @@ export function PortInspector({
               >
                 <FolderOpen className="w-3.5 h-3.5" />
                 <span>Files</span>
-              </button>
-            )}
-
-            {canOpenIde && (
-              <button
-                type="button"
-                onClick={() => onOpenIde(entry)}
-                className="adw-flat-btn h-7 px-2.5 text-[12px] flex items-center gap-1.5 border border-[var(--border-color)] text-[var(--window-fg-color)] cursor-pointer"
-              >
-                <Code2 className="w-3.5 h-3.5" />
-                <span>IDE</span>
               </button>
             )}
 
