@@ -1,0 +1,281 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      draft:
+        description: "Keep GitHub Release as draft"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate Release Metadata
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tag: ${{ steps.meta.outputs.tag }}
+      prerelease: ${{ steps.meta.outputs.prerelease }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Verify release configuration and version sync
+        run: npm run release:check
+
+      - name: Typecheck frontend
+        run: npm run typecheck
+
+      - name: Run frontend tests
+        run: npm run test
+
+      - name: Extract and verify tag version
+        id: meta
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" != "${TAG}" ]]; then
+            echo "Error: Git tag '${GITHUB_REF_NAME}' does not match package version '${TAG}'." >&2
+            exit 1
+          fi
+          if [[ "${VERSION%%+*}" == *-* ]]; then
+            PRERELEASE="true"
+          else
+            PRERELEASE="false"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "prerelease=${PRERELEASE}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Package (${{ matrix.label }})
+    needs: validate
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macOS Apple Silicon
+            platform: macos-latest
+            rust_target: aarch64-apple-darwin
+            args: --target aarch64-apple-darwin
+          - label: macOS Intel
+            platform: macos-latest
+            rust_target: x86_64-apple-darwin
+            args: --target x86_64-apple-darwin
+          - label: Linux x86_64
+            platform: ubuntu-22.04
+            rust_target: x86_64-unknown-linux-gnu
+            args: ""
+          - label: Windows x64
+            platform: windows-latest
+            rust_target: x86_64-pc-windows-msvc
+            args: ""
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: ${{ matrix.rust_target }}
+
+      - name: Install Linux packaging dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libxdo-dev \
+            libssl-dev \
+            patchelf \
+            rpm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri release bundles
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        with:
+          args: ${{ matrix.args }}
+
+      - name: Collect installers for release upload and checksums
+        shell: bash
+        run: |
+          mkdir -p release-artifacts
+          find src-tauri/target -type f \( \
+            -name "*.deb" -o \
+            -name "*.rpm" -o \
+            -name "*.AppImage" -o \
+            -name "*.dmg" -o \
+            -name "*.msi" -o \
+            -name "*-setup.exe" \
+          \) -path "*/bundle/*" -exec cp {} release-artifacts/ \;
+          ls -lh release-artifacts/
+
+      - name: Upload installers to workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.rust_target }}
+          path: release-artifacts/*
+          if-no-files-found: error
+
+  publish:
+    name: Create Release and Upload Assets & SHA256SUMS
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all platform installers
+        uses: actions/download-artifact@v4
+        with:
+          path: all-installers
+          pattern: installers-*
+          merge-multiple: true
+
+      - name: Generate SHA256SUMS.txt
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(all-installers/*)
+          if (( ${#files[@]} == 0 )); then
+            echo "Error: No installer artifacts found in all-installers/." >&2
+            exit 1
+          fi
+          (
+            cd all-installers
+            sha256sum -- * | sort -k2
+          ) > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Create or update GitHub Release and upload assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          RELEASE_PRERELEASE: ${{ needs.validate.outputs.prerelease }}
+          RELEASE_DRAFT: ${{ github.event_name != 'workflow_dispatch' || inputs.draft }}
+        run: |
+          shopt -s nullglob
+          RELEASE_NAME="iPort ${RELEASE_TAG}"
+          RELEASE_BODY=$(cat <<'EOF'
+          See [CHANGELOG.md](https://github.com/__REPO__/blob/main/CHANGELOG.md) for the full list of changes in this release.
+
+          ### Downloads
+          - **Linux**: `.deb` (Debian/Ubuntu), `.rpm` (Fedora/RHEL), or `.AppImage` (universal)
+          - **macOS**: `.dmg` (Apple Silicon `aarch64` or Intel `x64`)
+          - **Windows**: `.msi` or `-setup.exe` (NSIS installer)
+
+          Verify downloads with `SHA256SUMS.txt` attached to this release.
+          EOF
+          )
+          RELEASE_BODY="${RELEASE_BODY/__REPO__/${GITHUB_REPOSITORY}}"
+
+          # Look up an existing release (including drafts) matching RELEASE_TAG
+          RELEASE_ID=$(
+            gh api --paginate "repos/${GITHUB_REPOSITORY}/releases" \
+              | jq -r --arg tag "${RELEASE_TAG}" '.[] | select(.tag_name == $tag) | .id' \
+              | awk 'NR == 1 { print }'
+          )
+
+          if [[ -z "${RELEASE_ID}" ]]; then
+            # Always create as draft first so all assets are attached before publishing
+            RELEASE_ID=$(
+              gh api --method POST "repos/${GITHUB_REPOSITORY}/releases" \
+                -f tag_name="${RELEASE_TAG}" \
+                -f target_commitish="${GITHUB_SHA}" \
+                -f name="${RELEASE_NAME}" \
+                -f body="${RELEASE_BODY}" \
+                -F draft=true \
+                -F prerelease="${RELEASE_PRERELEASE}" \
+                --jq '.id'
+            )
+            echo "Created draft release ${RELEASE_TAG} (id=${RELEASE_ID})."
+          else
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" \
+              -f name="${RELEASE_NAME}" \
+              -f body="${RELEASE_BODY}" \
+              -F prerelease="${RELEASE_PRERELEASE}" \
+              > /dev/null
+            echo "Reusing existing release ${RELEASE_TAG} (id=${RELEASE_ID})."
+          fi
+
+          EXISTING_ASSETS=$(
+            gh api --paginate "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets" \
+              --jq '.[] | "\(.id)\t\(.name)"'
+          )
+
+          upload_asset() {
+            local file="$1"
+            local name
+            name="$(basename "$file")"
+
+            local existing_id
+            existing_id=$(awk -F '\t' -v target="$name" '$2 == target { print $1; exit }' <<< "$EXISTING_ASSETS")
+            if [[ -n "$existing_id" ]]; then
+              gh api --method DELETE "repos/${GITHUB_REPOSITORY}/releases/assets/${existing_id}"
+            fi
+
+            local encoded_name
+            encoded_name=$(jq -rn --arg n "$name" '$n | @uri')
+
+            curl --fail --silent --show-error --retry 3 --retry-delay 5 -X POST \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary "@${file}" \
+              "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=${encoded_name}" \
+              > /dev/null
+            echo "Uploaded ${name}"
+          }
+
+          for installer in all-installers/*; do
+            upload_asset "$installer"
+          done
+          upload_asset "SHA256SUMS.txt"
+
+          if [[ "${RELEASE_DRAFT}" == "false" ]]; then
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" \
+              -F draft=false \
+              > /dev/null
+            echo "Published release ${RELEASE_TAG} (id=${RELEASE_ID})."
+          fi

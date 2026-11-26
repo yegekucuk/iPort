@@ -3,8 +3,81 @@
 > A lightweight, cross-platform desktop command center to inspect, organize, and manage every local port, dev server, Docker container, background service, tunnel, and third-party application running on your machine.
 
 [![Status](https://img.shields.io/badge/status-Phase%201%20MVP-brightgreen)](#roadmap)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](#design--architecture-decisions)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](#installation)
 [![Stack](https://img.shields.io/badge/stack-Tauri%20v2%20%2B%20Rust%20%2B%20React%20TS-orange)](#tech-stack)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+---
+
+## Installation
+
+Download the latest prebuilt installer for your platform from [GitHub Releases](https://github.com/yegekucuk/iPort/releases):
+
+| Platform | Package | Install Command / Notes |
+| :--- | :--- | :--- |
+| **Debian / Ubuntu** | `.deb` | `sudo apt install ./iPort_<version>_amd64.deb` |
+| **Fedora / RHEL** | `.rpm` | `sudo dnf install ./iPort-<version>-1.x86_64.rpm` |
+| **Linux (Universal)** | `.AppImage` | `chmod +x iPort_<version>_amd64.AppImage && ./iPort_<version>_amd64.AppImage` |
+| **macOS** | `.dmg` | Open `.dmg` (`aarch64` Apple Silicon or `x64` Intel) and drag **iPort** to Applications |
+| **Windows** | `.msi` / `-setup.exe` | Run the NSIS (`-setup.exe`) or MSI installer |
+
+Each release includes a `SHA256SUMS.txt` file to verify package integrity (`sha256sum -c SHA256SUMS.txt`).
+
+---
+
+## Building & Packaging Locally
+
+### Prerequisites
+- **Node.js 22+** and **npm**
+- **Rust stable toolchain** (`rustup`)
+- **Linux system libraries** (Debian/Ubuntu):
+  ```bash
+  sudo apt-get install -y \
+    libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
+    librsvg2-dev libxdo-dev libssl-dev patchelf rpm
+  ```
+
+### Development & Local Packaging
+
+```bash
+# Install frontend dependencies
+npm ci
+
+# Run desktop app in dev mode
+npm run tauri:dev
+
+# Run checks, unit tests, and release verification
+npm run release:check
+npm run typecheck
+npm run test
+cargo test --manifest-path src-tauri/Cargo.toml
+
+# Build installers for the current OS
+npm run tauri:build
+
+# Or build a specific Linux package target
+npm run package:deb
+npm run package:rpm
+npm run package:appimage
+```
+
+Generated bundles are placed in `src-tauri/target/release/bundle/`.
+
+### Cutting a Release
+
+1. Bump the version consistently across `package.json`, `package-lock.json`, `src-tauri/tauri.conf.json`, and `src-tauri/Cargo.toml`:
+   ```bash
+   npm run release:version -- 0.2.0
+   cargo check --manifest-path src-tauri/Cargo.toml
+   ```
+2. Update `CHANGELOG.md` and run `npm run release:check`.
+3. Commit and push a matching SemVer tag (`v0.2.0`):
+   ```bash
+   git add -A && git commit -m "chore: release v0.2.0"
+   git tag -a v0.2.0 -m "Release v0.2.0"
+   git push origin main --follow-tags
+   ```
+4. The `.github/workflows/release.yml` workflow builds `.deb`, `.rpm`, `.AppImage`, macOS `.dmg` (Apple Silicon & Intel), Windows `.msi` & `-setup.exe`, and `SHA256SUMS.txt`, uploading them to a draft GitHub Release ready to publish.
 
 ---
 
@@ -240,9 +313,15 @@ iPort/
 ### Phase 6 — Polish, Settings, Packaging & Release
 - [ ] Build comprehensive **Settings Panel**: configurable polling interval, global shortcut customization, OS-noise allow/deny overrides, default safe list, theme override (`System` / `Dark` / `Light`)
 - [ ] Optimize memory & CPU overhead under heavy port loads (100+ listening sockets & multi-container stacks)
-- [ ] Configure cross-platform release pipelines & installers (`.dmg` for macOS Apple Silicon & Intel, `.msi`/`.exe` for Windows, `.AppImage`/`.deb` for Linux)
+- [x] Configure cross-platform release pipelines & installers (`.dmg` for macOS Apple Silicon & Intel, `.msi`/`.exe` for Windows, `.AppImage`/`.deb`/`.rpm` for Linux)
 - [ ] Add code signing, notarization, and in-app auto-updater
 - [ ] Write user documentation, keyboard shortcut cheatsheet, and troubleshooting guide
+
+---
+
+## License
+
+Licensed under the [MIT License](LICENSE).
 
 ---
 

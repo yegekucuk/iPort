@@ -1,6 +1,17 @@
 {
   "name": "iport",
   "version": "0.1.0",
+  "description": "Cross-platform desktop command center for inspecting and managing local listening ports",
+  "license": "MIT",
+  "author": "yegekucuk",
+  "homepage": "https://github.com/yegekucuk/iPort#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yegekucuk/iPort.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yegekucuk/iPort/issues"
+  },
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +20,14 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "package:deb": "tauri build --bundles deb",
+    "package:rpm": "tauri build --bundles rpm",
+    "package:appimage": "tauri build --bundles appimage",
+    "release:check": "node scripts/check-release.mjs",
+    "release:version": "node scripts/bump-version.mjs"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.20.6",

@@ -27,11 +27,17 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Typecheck, test, and build frontend
-        run: |
-          npm run typecheck
-          npm run test
-          npm run build
+      - name: Verify release metadata
+        run: npm run release:check
+
+      - name: Typecheck frontend
+        run: npm run typecheck
+
+      - name: Run frontend tests
+        run: npm run test
+
+      - name: Build frontend
+        run: npm run build
 
       - name: Install Linux Tauri dependencies
         if: matrix.os == 'ubuntu-latest'
@@ -43,10 +49,13 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             libxdo-dev \
+            libssl-dev \
             patchelf
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
@@ -55,6 +64,9 @@ jobs:
 
       - name: Check Rust workspace
         run: cargo check --manifest-path src-tauri/Cargo.toml
+
+      - name: Lint Rust workspace with Clippy
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
       - name: Run Rust unit & smoke tests
         run: cargo test --manifest-path src-tauri/Cargo.toml
