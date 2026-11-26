@@ -7,6 +7,7 @@ import {
   Sun,
   X,
 } from "lucide-react";
+import appIcon from "../assets/icon.png";
 import type { FilterChip, SnapshotCounts, ThemeMode } from "../types/port";
 
 interface TopBarProps {
@@ -54,17 +55,15 @@ export function TopBar({
       {/* Primary Toolbar Row */}
       <div className="px-3.5 py-2 flex items-center gap-3">
         <div className="flex items-center gap-2 shrink-0">
-          <span
+          <img
+            src={appIcon}
+            alt=""
             aria-hidden="true"
-            className="w-6 h-6 rounded-[7px] bg-[var(--accent-bg-color)] text-[var(--accent-fg-color)] flex items-center justify-center shadow-xs"
-          >
-            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <circle cx="12" cy="12" r="7" />
-              <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none" />
-            </svg>
-          </span>
+            draggable={false}
+            className="w-7 h-7 rounded-[6px] object-contain shrink-0 select-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.12)]"
+          />
           <span className="font-semibold text-[14px] tracking-[-0.01em] text-[var(--window-fg-color)]">
-            iPort
+            <span className="text-[#e95420]">i</span>Port
           </span>
           {previewMode && (
             <span className="text-[11px] px-1.5 py-0.5 rounded-[5px] bg-[var(--entry-bg-color)] text-[var(--muted-fg-color)] border border-[var(--border-color)]">
